@@ -4,7 +4,6 @@ import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions
 from riotwatcher import LolWatcher, ApiError
-from bs4 import BeautifulSoup
 
 def get_prefix(bot, message):
     with open('data/prefixes.json', 'r') as f:
