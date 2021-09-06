@@ -34,7 +34,7 @@ async def on_ready():
 
 
 @bot.command(name='profile')
-async def profile(ctx, message, *, value):
+async def profile(message, *, value):
 
     rawValue = [x.strip() for x in value.split('-')]
     value = rawValue[0]
@@ -57,11 +57,8 @@ async def profile(ctx, message, *, value):
 
     print(f"{region} {server}")
 
-    try:
-        name_url = watcher.summoner.by_name(region, f'{rawValue[0]}')
-        soloRank = watcher.league.by_summoner(region, name_url['id'])
-    except requests.exceptions.HTTPError:
-        ("ERROR: SUMMONER NOT FOUND")
+    name_url = watcher.summoner.by_name(region, f'{rawValue[0]}')
+    soloRank = watcher.league.by_summoner(region, name_url['id'])
 
     if (' ' in value) == True:
         opggValue = value.replace(" ", "+")
