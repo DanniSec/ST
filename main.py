@@ -5,6 +5,8 @@ from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions
 from riotwatcher import LolWatcher, ApiError
 import config
+import urllib.request
+import os
 
 def get_prefix(bot, message):
     with open('data/prefixes.json', 'r') as f:
@@ -57,6 +59,9 @@ async def profile(message, *, value):
 
     name_url = watcher.summoner.by_name(region, f'{rawValue[0]}')
     soloRank = watcher.league.by_summoner(region, name_url['id'])
+    userPts = rawValue[0] + ".png"
+    if (' ' in userPts) == True:
+        userPoints = userPts.replace(" ", "")
 
     if (' ' in value) == True:
         opggValue = value.replace(" ", "+")
@@ -66,9 +71,9 @@ async def profile(message, *, value):
 
     if (' ' in value) == True:
         mpValue = value.replace(" ", "%20")
-        mpUrl = f"https://www.masterypoints.com/image/profile/{mpValue}/{server.lower()}"
+        urllib.request.urlretrieve(f"https://www.masterypoints.com/image/profile/{mpValue}/{server.lower()}", f"img/{userPoints}")
     else:
-        mpUrl = f"https://www.masterypoints.com/image/profile/{rawValue[0]}/{server.lower()}"
+        urllib.request.urlretrieve(f"https://www.masterypoints.com/image/profile/{rawValue[0]}/{server.lower()}", f"img/{userPoints}")
 
     rank = soloRank[0]['tier']
     rank += '.png'
@@ -90,6 +95,7 @@ async def profile(message, *, value):
         else:
             fxRank = temp
 
+    pointsImage = discord.File(f"img/{userPoints}", filename=f"{userPoints}")
     file = discord.File(f"img/{slRank.split()[0]}.png", filename=f"{rank}")
     embed = discord.Embed(colour=discord.Colour.random())
 
@@ -102,14 +108,14 @@ async def profile(message, *, value):
     embed.set_thumbnail(url=f"attachment://{rank}")
 
 
-    embed.set_image(url=mpUrl)
+    embed.set_image(url=f"attachment://{userPoints}")
 
     embed.set_author(name=f"{rawValue[0]} {server.upper()}",
                      url=opggUrl,
                      icon_url=f"http://ddragon.leagueoflegends.com/cdn/11.17.1/img/profileicon/"
                               f"{name_url['profileIconId']}.png")
-
-    await message.channel.send(embed=embed, file=file)
+    await message.channel.send(embed=embed, files=(file, pointsImage))
+    os.remove(f"img/{userPoints}")
 
 if config.is_dev:
     print("Running in dev mode!")
