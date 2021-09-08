@@ -62,6 +62,8 @@ async def profile(message, *, value):
     userPts = rawValue[0] + ".png"
     if (' ' in userPts) == True:
         userPoints = userPts.replace(" ", "")
+    else:
+        userPoints = userPts
 
     if (' ' in value) == True:
         opggValue = value.replace(" ", "+")
