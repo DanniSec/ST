@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions
 from riotwatcher import LolWatcher, ApiError
+import config
 
 def get_prefix(bot, message):
     with open('data/prefixes.json', 'r') as f:
@@ -14,18 +15,15 @@ def get_prefix(bot, message):
 
 bot = commands.Bot(command_prefix=get_prefix, help_command=None)
 
-config = open('config.json')
-data = json.load(config)
-apikey = data['apikey']
+
+apikey = config.apikey
 
 
 watcher = LolWatcher(apikey)
-token = data['token']
+token = config.token
 
-config.close()
-
-imgList = ['img/IRON.png', 'img/BRONZE.png', 'img/SILVER.png', 'img/GOLD.png', 'img/PLATINUM.png', 'img/DIAMOND.png',
-           'img/MASTER.png', 'img/GRANDMASTER.png', 'img/CHALLENGER.png']
+imgList = ['img/UNRANKED.png', 'img/IRON.png', 'img/BRONZE.png', 'img/SILVER.png', 'img/GOLD.png', 'img/PLATINUM.png',
+           'img/DIAMOND.png', 'img/MASTER.png', 'img/GRANDMASTER.png', 'img/CHALLENGER.png']
 
 
 @bot.event
@@ -103,6 +101,7 @@ async def profile(message, *, value):
 
     embed.set_thumbnail(url=f"attachment://{rank}")
 
+
     embed.set_image(url=mpUrl)
 
     embed.set_author(name=f"{rawValue[0]} {server.upper()}",
@@ -112,5 +111,6 @@ async def profile(message, *, value):
 
     await message.channel.send(embed=embed, file=file)
 
-
+if config.is_dev:
+    print("Running in dev mode!")
 bot.run(token)
