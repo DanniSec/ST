@@ -7,16 +7,15 @@ import json
 import requests
 import discord
 from discord.ext import commands, tasks
-from discord.ext.commands import has_permissions
+#from discord.ext.commands import has_permissions
 from riotwatcher import LolWatcher, ApiError
 import config
 import urllib.request
 import os
 from bs4 import BeautifulSoup
-import re
-from urllib.request import urlopen
+#import re
+#from urllib.request import urlopen
 from pygicord import Paginator
-from selenium import webdriver
 
 def get_prefix(bot, message):
     with open('data/prefixes.json', 'r') as f:
