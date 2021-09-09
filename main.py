@@ -1,3 +1,8 @@
+#TODO USER NOT FOUND MESSAGE (ERROR HANDLER)
+#TODO ADD STATUS
+#TODO ADD FOOTER TO EMEBED MESSAGE
+
+from math import ceil
 import json
 import requests
 import discord
@@ -7,6 +12,11 @@ from riotwatcher import LolWatcher, ApiError
 import config
 import urllib.request
 import os
+from bs4 import BeautifulSoup
+import re
+from urllib.request import urlopen
+from pygicord import Paginator
+from selenium import webdriver
 
 def get_prefix(bot, message):
     with open('data/prefixes.json', 'r') as f:
@@ -33,6 +43,59 @@ async def on_ready():
         print("bot is ready")
 
 
+def get_pages(ceilLeng, res, loreTitle, champTitle, value):
+    pages = []
+    for i in range(0, ceilLeng):
+        embed = discord.Embed(title=f'{loreTitle}', description=f'**{value.upper()}:** ***{champTitle}***',
+                              url=f"https://universe.leagueoflegends.com/en_AU/story/champion/{value.lower()}/",
+                              colour=discord.Colour.random())
+        embed.set_thumbnail(url=f"https://ddragon.leagueoflegends.com/cdn/11.16.1/img/champion/{value.capitalize()}.png")
+        embed.add_field(name="BIOGRAPHY".upper(), value=res[i], inline=True)
+        pages.append(embed)
+    return(pages)
+
+@bot.command(name='bio')
+async def profile(message, value):
+
+    url = f'https://universe.leagueoflegends.com/en_AU/story/champion/{value.lower()}/'
+    url2 = f'https://universe.leagueoflegends.com/en_AU/champion/{value.lower()}/'
+
+    res = requests.get(url)
+    html_page = res.content
+
+    champAbout = requests.get(url2)
+    html_about = champAbout.content
+    print(html_about)
+
+    soup = BeautifulSoup(html_page, 'html.parser')
+    champContent = soup.find("div", {"id": "Content"})
+
+    soupAbout = BeautifulSoup(html_about, 'html.parser')
+    rawChampTitle = soupAbout.find("meta", property="og:description")
+    champTitle = rawChampTitle['content']
+
+    title = soup.find("meta", property="og:title")
+    desc = soup.find("meta", property="og:description")
+
+    loreTitle = title['content'] if title else "No meta title given"
+    rawContent = desc['content'] if desc else "No meta description given"
+
+    if len(rawContent) > 1024:
+        leng = len(rawContent)/1024
+        x = 1024
+        res = [rawContent[y - x:y] for y in range(x, len(rawContent) + x, x)]
+        #print(res)
+        ceilLeng = ceil(leng)
+    else:
+        pass
+
+    paginator = Paginator(
+        pages=get_pages(ceilLeng, res, loreTitle, champTitle, value),
+        timeout=60.0,
+    )
+    await paginator.start(message)
+
+
 @bot.command(name='profile')
 async def profile(message, *, value):
 
@@ -54,9 +117,6 @@ async def profile(message, *, value):
     elif server == "kr":
         region = "kr"
 
-
-    print(f"{region} {server}")
-
     name_url = watcher.summoner.by_name(region, f'{rawValue[0]}')
     soloRank = watcher.league.by_summoner(region, name_url['id'])
     userPts = rawValue[0] + ".png"
@@ -77,9 +137,6 @@ async def profile(message, *, value):
     else:
         urllib.request.urlretrieve(f"https://www.masterypoints.com/image/profile/{rawValue[0]}/{server.lower()}", f"img/{userPoints}")
 
-    rank = soloRank[0]['tier']
-    rank += '.png'
-
 
     print(soloRank)
     slRank = "UNRANKED"
@@ -96,8 +153,15 @@ async def profile(message, *, value):
             slRank = temp
         else:
             fxRank = temp
+    if slRank != "UNRANKED":
+        rank = soloRank[0]['tier']
+        rank += '.png'
+    else:
+        rank = "UNRANKED.png"
+
 
     pointsImage = discord.File(f"img/{userPoints}", filename=f"{userPoints}")
+
     file = discord.File(f"img/{slRank.split()[0]}.png", filename=f"{rank}")
     embed = discord.Embed(colour=discord.Colour.random())
 
@@ -116,9 +180,12 @@ async def profile(message, *, value):
                      url=opggUrl,
                      icon_url=f"http://ddragon.leagueoflegends.com/cdn/11.17.1/img/profileicon/"
                               f"{name_url['profileIconId']}.png")
+
     await message.channel.send(embed=embed, files=(file, pointsImage))
     os.remove(f"img/{userPoints}")
 
+
 if config.is_dev:
     print("Running in dev mode!")
+
 bot.run(token)
