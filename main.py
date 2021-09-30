@@ -1,20 +1,20 @@
 #TODO USER NOT FOUND MESSAGE (ERROR HANDLER)
 #TODO ADD STATUS
 #TODO ADD FOOTER TO EMEBED MESSAGE
+#TODO ADD PAGE NUMB
 
 from math import ceil
 import json
 import requests
 import discord
-from discord.ext import commands, tasks
-#from discord.ext.commands import has_permissions
+from discord.ext import commands
 from riotwatcher import LolWatcher, ApiError
 import config
 import urllib.request
 import os
 from bs4 import BeautifulSoup
 #import re
-#from urllib.request import urlopen
+# from urllib.request import urlopen
 from pygicord import Paginator
 
 def get_prefix(bot, message):
@@ -50,14 +50,15 @@ def get_pages(ceilLeng, res, loreTitle, champTitle, value):
                               colour=discord.Colour.random())
         embed.set_thumbnail(url=f"https://ddragon.leagueoflegends.com/cdn/11.16.1/img/champion/{value.capitalize()}.png")
         embed.add_field(name="BIOGRAPHY".upper(), value=res[i], inline=True)
+        embed.set_footer(text=f'Page {i+1}/{ceilLeng}')
         pages.append(embed)
     return(pages)
 
 @bot.command(name='bio')
 async def profile(message, value):
 
-    url = f'https://universe.leagueoflegends.com/en_AU/story/champion/{value.lower()}/'
-    url2 = f'https://universe.leagueoflegends.com/en_AU/champion/{value.lower()}/'
+    url = f'https://universe.leagueoflegends.com/en_SG/story/champion/{value.lower()}/'
+    url2 = f'https://universe.leagueoflegends.com/en_SG/champion/{value.lower()}/'
 
     res = requests.get(url)
     html_page = res.content
@@ -78,12 +79,12 @@ async def profile(message, value):
 
     loreTitle = title['content'] if title else "No meta title given"
     rawContent = desc['content'] if desc else "No meta description given"
+    print(rawContent)
 
     if len(rawContent) > 1024:
         leng = len(rawContent)/1024
         x = 1024
         res = [rawContent[y - x:y] for y in range(x, len(rawContent) + x, x)]
-        #print(res)
         ceilLeng = ceil(leng)
     else:
         pass
@@ -116,8 +117,15 @@ async def profile(message, *, value):
     elif server == "kr":
         region = "kr"
 
-    name_url = watcher.summoner.by_name(region, f'{rawValue[0]}')
-    soloRank = watcher.league.by_summoner(region, name_url['id'])
+    try:
+        name_url = watcher.summoner.by_name(region, f'{rawValue[0]}')
+        soloRank = watcher.league.by_summoner(region, name_url['id'])
+
+    except:
+        embed = discord.Embed(colour=discord.Colour.random())
+        embed.add_field(name="Error", value="Summoner not found")
+        await message.channel.send(embed=embed)
+
     userPts = rawValue[0] + ".png"
     if (' ' in userPts) == True:
         userPoints = userPts.replace(" ", "")
